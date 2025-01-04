@@ -32,7 +32,11 @@ License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
     import Warning from "./Warning.svelte";
     import ParamsInputRow from "./ParamsInputRow.svelte";
     import ParamsSearchRow from "./ParamsSearchRow.svelte";
-    import { renderSimulationChart, type Point } from "../graphs/simulator";
+    import {
+        renderSimulationChart,
+        SimulateSubgraph,
+        type Point,
+    } from "../graphs/simulator";
     import Graph from "../graphs/Graph.svelte";
     import HoverColumns from "../graphs/HoverColumns.svelte";
     import CumulativeOverlay from "../graphs/CumulativeOverlay.svelte";
@@ -74,7 +78,7 @@ License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
         | ComputeRetentionProgress
         | undefined;
 
-    let showTime = false;
+    let simulateSubgraph: SimulateSubgraph = SimulateSubgraph.count;
 
     const optimalRetentionRequest = new ComputeOptimalRetentionRequest({
         daysToSimulate: 365,
@@ -299,20 +303,6 @@ License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
     let points: Point[] = [];
 
-    function movingAverage(y: number[], windowSize: number): number[] {
-        const result: number[] = [];
-        for (let i = 0; i < y.length; i++) {
-            let sum = 0;
-            let count = 0;
-            for (let j = Math.max(0, i - windowSize + 1); j <= i; j++) {
-                sum += y[j];
-                count++;
-            }
-            result.push(sum / count);
-        }
-        return result;
-    }
-
     function addArrays(arr1: number[], arr2: number[]): number[] {
         return arr1.map((value, index) => value + arr2[index]);
     }
@@ -336,41 +326,50 @@ License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
         } finally {
             simulateProgressString = "";
             if (resp) {
-                const dailyTimeCost = movingAverage(
-                    resp.dailyTimeCost,
-                    Math.ceil(simulateFsrsRequest.daysToSimulate / 50),
+                const dailyTotalCount = addArrays(
+                    resp.dailyReviewCount,
+                    resp.dailyNewCount,
                 );
-                const dailyReviewCount = movingAverage(
-                    addArrays(resp.dailyReviewCount, resp.dailyNewCount),
-                    Math.ceil(simulateFsrsRequest.daysToSimulate / 50),
-                );
+
+                const dailyMemorizedCount = resp.accumulatedKnowledgeAcquisition;
+
                 points = points.concat(
-                    dailyTimeCost.map((v, i) => ({
+                    resp.dailyTimeCost.map((v, i) => ({
                         x: i,
                         timeCost: v,
-                        count: dailyReviewCount[i],
+                        count: dailyTotalCount[i],
+                        memorized: dailyMemorizedCount[i],
                         label: simulationNumber,
                     })),
                 );
+
                 tableData = renderSimulationChart(
                     svg as SVGElement,
                     bounds,
                     points,
-                    showTime,
+                    simulateSubgraph,
                 );
             }
         }
     }
 
-    $: tableData = renderSimulationChart(svg as SVGElement, bounds, points, showTime);
+    $: tableData = renderSimulationChart(
+        svg as SVGElement,
+        bounds,
+        points,
+        simulateSubgraph,
+    );
 
     function clearSimulation(): void {
         points = points.filter((p) => p.label !== simulationNumber);
         simulationNumber = Math.max(0, simulationNumber - 1);
-        tableData = renderSimulationChart(svg as SVGElement, bounds, points, showTime);
+        tableData = renderSimulationChart(
+            svg as SVGElement,
+            bounds,
+            points,
+            simulateSubgraph,
+        );
     }
-
-    const label = tr.statisticsReviewsTimeCheckbox();
 </script>
 
 <SpinBoxFloatRow
@@ -508,7 +507,7 @@ License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
         <SpinBoxRow
             bind:value={simulateFsrsRequest.deckSize}
             defaultValue={0}
-            min={1}
+            min={0}
             max={100000}
         >
             <SettingTitle on:click={() => openHelpModal("simulateFsrsReview")}>
@@ -518,7 +517,7 @@ License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
         <SpinBoxRow
             bind:value={simulateFsrsRequest.newLimit}
-            defaultValue={defaults.newPerDay}
+            defaultValue={$config.newPerDay}
             min={0}
             max={9999}
         >
@@ -529,7 +528,7 @@ License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
         <SpinBoxRow
             bind:value={simulateFsrsRequest.reviewLimit}
-            defaultValue={defaults.reviewsPerDay}
+            defaultValue={$config.reviewsPerDay}
             min={0}
             max={9999}
         >
@@ -540,7 +539,7 @@ License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
         <SpinBoxRow
             bind:value={simulateFsrsRequest.maxInterval}
-            defaultValue={defaults.maximumReviewInterval}
+            defaultValue={$config.maximumReviewInterval}
             min={1}
             max={36500}
         >
@@ -567,12 +566,34 @@ License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
         <div>{simulateProgressString}</div>
 
         <Graph>
-            <InputBox>
-                <label>
-                    <input type="checkbox" bind:checked={showTime} />
-                    {label}
-                </label>
-            </InputBox>
+            <div class="radio-group">
+                <InputBox>
+                    <label>
+                        <input
+                            type="radio"
+                            value={SimulateSubgraph.count}
+                            bind:group={simulateSubgraph}
+                        />
+                        {tr.deckConfigFsrsSimulatorRadioCount()}
+                    </label>
+                    <label>
+                        <input
+                            type="radio"
+                            value={SimulateSubgraph.time}
+                            bind:group={simulateSubgraph}
+                        />
+                        {tr.statisticsReviewsTimeCheckbox()}
+                    </label>
+                    <label>
+                        <input
+                            type="radio"
+                            value={SimulateSubgraph.memorized}
+                            bind:group={simulateSubgraph}
+                        />
+                        {tr.deckConfigFsrsSimulatorRadioMemorized()}
+                    </label>
+                </InputBox>
+            </div>
 
             <svg bind:this={svg} viewBox={`0 0 ${bounds.width} ${bounds.height}`}>
                 <CumulativeOverlay />
@@ -587,4 +608,7 @@ License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 </div>
 
 <style>
+    div.radio-group {
+        margin: 0.5em;
+    }
 </style>
