@@ -14,7 +14,7 @@ from anki.config import Config
 from anki.consts import NEW_CARDS_RANDOM, STARTING_FACTOR
 from anki.importing.base import Importer
 from anki.models import NotetypeId
-from anki.notes import NoteId
+from anki.notes import Note, NoteId
 from anki.utils import (
     field_checksum,
     guid64,
@@ -23,6 +23,7 @@ from anki.utils import (
     split_fields,
     timestamp_id,
 )
+from anki import hooks
 
 TagMappedUpdate = tuple[int, int, str, str, NoteId, str, str]
 TagModifiedUpdate = tuple[int, int, str, str, NoteId, str]
@@ -237,20 +238,39 @@ class NoteImporter(Importer):
         self, n: ForeignNote
     ) -> tuple[NoteId, str, NotetypeId, int, int, str, str, str, int, int, str]:
         id = self._nextID
+        guid = guid64()
+        mid = self.model["id"]
+        mod = int_time()
+        usn = self.col.usn()
         self._nextID = NoteId(self._nextID + 1)
         self._ids.append(id)
         self.processFields(n)
+        hook_note = Note(self.col, model=self.model)
+        hook_note._load_from_import(
+            id=id,
+            guid=guid,
+            mid=mid,
+            mod=mod,
+            usn=usn,
+            tags=n.tags,
+            fields=n.fields,
+        )
+        # usually note.id == 0 when note_will_be_added is called but not here
+        hooks.note_will_be_added(self.col, hook_note, self.col.decks.selected())
+        n.tags = hook_note.tags
+        n.fields = hook_note.fields
+
         # note id for card updates later
         for ord, c in list(n.cards.items()):
             self._cards.append((id, ord, c))
         return (
             id,
-            guid64(),
-            self.model["id"],
-            int_time(),
-            self.col.usn(),
+            guid,
+            mid,
+            mod,
+            usn,
             self.col.tags.join(n.tags),
-            n.fieldsStr,
+            join_fields(n.fields),
             "",
             0,
             0,
@@ -274,13 +294,14 @@ class NoteImporter(Importer):
         self.processFields(n, sflds)
         if self._tagsMapped:
             tags = self.col.tags.join(n.tags)
+            fieldsStr = join_fields(n.fields)
             return (
                 int_time(),
                 self.col.usn(),
-                n.fieldsStr,
+                fieldsStr,
                 tags,
                 id,
-                n.fieldsStr,
+                fieldsStr,
                 tags,
             )
         elif self.tagModified:
@@ -328,7 +349,7 @@ where id = ? and flds != ?""",
             else:
                 sidx = self._fmap[f][0]
                 fields[sidx] = note.fields[c]
-        note.fieldsStr = join_fields(fields)
+        note.fields = fields
         # temporary fix for the following issue until we can update the code:
         # https://forums.ankiweb.net/t/python-checksum-rust-checksum/8195/16
         if self.col.get_config_bool(Config.Bool.NORMALIZE_NOTE_TEXT):

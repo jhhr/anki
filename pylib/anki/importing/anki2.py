@@ -14,12 +14,16 @@ from anki.consts import *
 from anki.decks import DeckId, DeckManager
 from anki.importing.base import Importer
 from anki.models import NotetypeId
-from anki.notes import NoteId
+from anki.notes import Note, NoteId
 from anki.utils import int_time, join_fields, split_fields, strip_html_media
+from anki import hooks
 
 GUID = 1
 MID = 2
 MOD = 3
+USN = 4
+TAGS = 5
+FLDS = 6
 
 
 class V2ImportIntoV1(Exception):
@@ -123,6 +127,19 @@ class Anki2Importer(Importer):
                 note[4] = usn
                 # update media references in case of dupes
                 note[6] = self._mungeMedia(note[MID], note[6])
+                hook_note = Note(self.dst, model=note[MID])
+                hook_note._load_from_import(
+                    id=note[0],
+                    guid=note[GUID],
+                    mid=note[MID],
+                    mod=note[MOD],
+                    usn=note[USN],
+                    tags=note[TAGS].split(),
+                    fields=split_fields(note[FLDS]),
+                )
+                hooks.note_will_be_added(self.dst, hook_note, self.dst.decks.get_current_id())
+                note[TAGS] = " ".join(hook_note.tags)
+                note[FLDS] = join_fields(hook_note.fields)
                 add.append(note)
                 dirty.append(note[0])
                 # note we have the added the guid

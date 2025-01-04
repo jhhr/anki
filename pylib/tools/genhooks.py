@@ -34,8 +34,8 @@ hooks = [
         ],
         doc="""Allows modifying a note before it's added to the collection.
 
-        This hook may be called both when users use the Add screen, and when
-        add-ons like AnkiConnect add notes. It is not called when importing. If
+        This hook may be called both when users use the Add screen, when addons
+        like AnkiConnect add notes and when importing. If
         you wish to alter the Add screen, use gui_hooks.add_cards_will_add_note
         instead.""",
     ),

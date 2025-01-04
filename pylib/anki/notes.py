@@ -57,6 +57,25 @@ class Note(DeprecatedNamesMixin):
         assert note
         self._load_from_backend_note(note)
 
+    def _load_from_import(
+        self,
+        id: NoteId,
+        guid: str,
+        mid: NotetypeId,
+        mod: int,
+        usn: int,
+        tags: list[str],
+        fields: list[str],
+    ) -> None:
+        self.id = id
+        self.guid = guid
+        self.mid = mid
+        self.mod = mod
+        self.usn = usn
+        self.tags = tags
+        self.fields = fields
+        self._fmap = self.col.models.field_map(self.note_type())
+
     def _load_from_backend_note(self, note: notes_pb2.Note) -> None:
         self.id = NoteId(note.id)
         self.guid = note.guid
