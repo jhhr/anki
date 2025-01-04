@@ -40,6 +40,21 @@ hooks = [
         instead.""",
     ),
     Hook(
+        name="did_add_note",
+        args=[
+            "col: anki.collection.Collection",
+            "note: anki.notes.Note",
+        ],
+        doc="""Allows running side-effects after a note has been added to the collection.
+
+        Called after a note has been added to the collection through the Add screen,
+        an add-on like AnkiConnect or when importing.
+        
+        Modifying the note will require calling col.update_note() again and handling the undo entry.
+        Consider using the note_will_be_added hook instead, if you want to modify the note.
+        """,
+    ),
+    Hook(
         name="media_files_did_export",
         args=["count: int"],
         doc="Only used by legacy .apkg exporter. Will be deprecated in the future.",

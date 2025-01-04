@@ -194,7 +194,8 @@ class Anki2Importer(Importer):
         self.dst.db.executemany(
             "insert or replace into notes values (?,?,?,?,?,?,?,?,?,?,?)", update
         )
-        self.dst.after_note_updates(dirty, mark_modified=False, generate_cards=False)
+        added_ids = [note[0] for note in add]
+        self.dst.after_note_updates(dirty, added_ids, mark_modified=False, generate_cards=False)
 
     # determine if note is a duplicate, and adjust mid and/or guid as required
     # returns true if note should be added

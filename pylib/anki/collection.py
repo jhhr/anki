@@ -533,6 +533,7 @@ class Collection(DeprecatedNamesMixin):
         hooks.note_will_be_added(self, note, deck_id)
         out = self._backend.add_note(note=note._to_backend_note(), deck_id=deck_id)
         note.id = NoteId(out.note_id)
+        hooks.did_add_note(self, note)
         return out.changes
 
     def add_notes(self, requests: Iterable[AddNoteRequest]) -> OpChanges:
@@ -548,6 +549,7 @@ class Collection(DeprecatedNamesMixin):
         )
         for idx, request in enumerate(requests):
             request.note.id = NoteId(out.nids[idx])
+            hooks.did_add_note(self, request.note)
 
         return out.changes
 
@@ -631,6 +633,8 @@ class Collection(DeprecatedNamesMixin):
         self._backend.after_note_updates(
             nids=nids, generate_cards=generate_cards, mark_notes_modified=mark_modified
         )
+        for nid in new_nids:
+            hooks.did_add_note(self, self.get_note(nid))
 
     # Finding cards
     ##########################################################################
