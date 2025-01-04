@@ -40,7 +40,7 @@ hooks = [
         instead.""",
     ),
     Hook(
-        name="did_add_note",
+        name="note_added",
         args=[
             "col: anki.collection.Collection",
             "note: anki.notes.Note",
