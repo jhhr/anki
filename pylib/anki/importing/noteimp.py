@@ -208,8 +208,8 @@ class NoteImporter(Importer):
         self.addNew(new)
         self.addUpdates(updates)
         # generate cards + update field cache
-        new_ids = [x[0] for x in new]
-        self.col.after_note_updates(self._ids, new_ids, mark_modified=False)
+        new_nids = [x[0] for x in new]
+        self.col.after_note_updates(self._ids, mark_modified=False, new_nids=new_nids)
         # apply scheduling updates
         self.updateCards()
         # we randomize or order here, to ensure that siblings

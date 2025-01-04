@@ -629,8 +629,8 @@ class Collection(DeprecatedNamesMixin):
     def after_note_updates(
         self,
         nids: list[NoteId],
-        new_nids: list[NoteId],
         mark_modified: bool,
+        new_nids: list[NoteId] = [],
         generate_cards: bool = True,
     ) -> None:
         "If notes modified directly in database, call this afterwards."
