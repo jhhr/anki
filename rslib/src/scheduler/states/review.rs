@@ -26,6 +26,7 @@ pub struct ReviewState {
     pub lapses: u32,
     pub leeched: bool,
     pub memory_state: Option<FsrsMemoryState>,
+    pub desired_retention: Option<f32>,
 }
 
 impl Default for ReviewState {
@@ -37,6 +38,7 @@ impl Default for ReviewState {
             lapses: 0,
             leeched: false,
             memory_state: None,
+            desired_retention: None,
         }
     }
 }
@@ -102,6 +104,7 @@ impl ReviewState {
             lapses,
             leeched,
             memory_state,
+            desired_retention: ctx.desired_retention,
         };
         let again_relearn = RelearnState {
             learning: LearnState {
@@ -109,6 +112,7 @@ impl ReviewState {
                 scheduled_secs: (scheduled_days * 86_400.0) as u32,
                 elapsed_secs: 0,
                 memory_state,
+                desired_retention: ctx.desired_retention,
             },
             review: again_review,
         };
@@ -120,6 +124,7 @@ impl ReviewState {
                     scheduled_secs: again_delay,
                     elapsed_secs: 0,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                 },
                 review: again_review,
             }
@@ -140,6 +145,7 @@ impl ReviewState {
             elapsed_days: 0,
             ease_factor: (self.ease_factor + EASE_FACTOR_HARD_DELTA).max(MINIMUM_EASE_FACTOR),
             memory_state: ctx.fsrs_next_states.as_ref().map(|s| s.hard.memory.into()),
+            desired_retention: ctx.desired_retention,
             ..self
         }
     }
@@ -149,6 +155,7 @@ impl ReviewState {
             scheduled_days,
             elapsed_days: 0,
             memory_state: ctx.fsrs_next_states.as_ref().map(|s| s.good.memory.into()),
+            desired_retention: ctx.desired_retention,
             ..self
         }
     }
@@ -159,6 +166,7 @@ impl ReviewState {
             elapsed_days: 0,
             ease_factor: self.ease_factor + EASE_FACTOR_EASY_DELTA,
             memory_state: ctx.fsrs_next_states.as_ref().map(|s| s.easy.memory.into()),
+            desired_retention: ctx.desired_retention,
             ..self
         }
     }
@@ -358,6 +366,7 @@ mod test {
             lapses: 0,
             leeched: false,
             memory_state: None,
+            desired_retention: None,
         };
         ctx.fuzz_factor = Some(0.0);
         assert_eq!(state.passing_review_intervals(&ctx), (2, 3, 4));
@@ -387,6 +396,7 @@ mod test {
             lapses: 0,
             leeched: false,
             memory_state: None,
+            desired_retention: None,
         };
         ctx.fuzz_factor = Some(0.0);
         assert_eq!(state.passing_review_intervals(&ctx), (1, 3, 4));

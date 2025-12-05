@@ -73,9 +73,9 @@ impl CardState {
     /// Returns the position if it's a [NewState].
     pub(super) fn new_position(&self) -> Option<u32> {
         match self {
-            Self::Normal(NormalState::New(NewState { position }))
+            Self::Normal(NormalState::New(NewState { position, .. }))
             | Self::Filtered(FilteredState::Rescheduling(ReschedulingFilterState {
-                original_state: NormalState::New(NewState { position }),
+                original_state: NormalState::New(NewState { position, .. }),
             })) => Some(*position),
             _ => None,
         }
@@ -90,6 +90,7 @@ pub(crate) struct StateContext<'a> {
     pub fsrs_next_states: Option<NextStates>,
     pub fsrs_short_term_with_steps_enabled: bool,
     pub fsrs_allow_short_term: bool,
+    pub desired_retention: Option<f32>,
     // learning
     pub steps: LearningSteps<'a>,
     pub graduating_interval_good: u32,
@@ -150,6 +151,7 @@ impl StateContext<'_> {
             fsrs_next_states: None,
             fsrs_short_term_with_steps_enabled: false,
             fsrs_allow_short_term: false,
+            desired_retention: None,
         }
     }
 }

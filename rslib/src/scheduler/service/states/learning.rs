@@ -10,6 +10,7 @@ impl From<anki_proto::scheduler::scheduling_state::Learning> for LearnState {
             scheduled_secs: state.scheduled_secs,
             elapsed_secs: state.elapsed_secs,
             memory_state: state.memory_state.map(Into::into),
+            desired_retention: state.desired_retention,
         }
     }
 }
@@ -21,6 +22,7 @@ impl From<LearnState> for anki_proto::scheduler::scheduling_state::Learning {
             scheduled_secs: state.scheduled_secs,
             elapsed_secs: state.elapsed_secs,
             memory_state: state.memory_state.map(Into::into),
+            desired_retention: state.desired_retention,
         }
     }
 }

@@ -15,6 +15,7 @@ pub struct LearnState {
     pub scheduled_secs: u32,
     pub elapsed_secs: u32,
     pub memory_state: Option<FsrsMemoryState>,
+    pub desired_retention: Option<f32>,
 }
 
 impl LearnState {
@@ -44,6 +45,7 @@ impl LearnState {
                 scheduled_secs: again_delay,
                 elapsed_secs: 0,
                 memory_state,
+                desired_retention: ctx.desired_retention,
             }
             .into()
         } else {
@@ -65,6 +67,7 @@ impl LearnState {
                     scheduled_secs: (interval * 86_400.0) as u32,
                     elapsed_secs: 0,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                 }
                 .into()
             } else {
@@ -76,6 +79,7 @@ impl LearnState {
                     ),
                     ease_factor: ctx.initial_ease_factor,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                     ..Default::default()
                 }
                 .into()
@@ -90,6 +94,7 @@ impl LearnState {
                 scheduled_secs: hard_delay,
                 elapsed_secs: 0,
                 memory_state,
+                desired_retention: ctx.desired_retention,
                 ..self
             }
             .into()
@@ -111,6 +116,7 @@ impl LearnState {
                     scheduled_secs: (interval * 86_400.0) as u32,
                     elapsed_secs: 0,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                     ..self
                 }
                 .into()
@@ -123,6 +129,7 @@ impl LearnState {
                     ),
                     ease_factor: ctx.initial_ease_factor,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                     ..Default::default()
                 }
                 .into()
@@ -138,6 +145,7 @@ impl LearnState {
                 scheduled_secs: good_delay,
                 elapsed_secs: 0,
                 memory_state,
+                desired_retention: ctx.desired_retention,
             }
             .into()
         } else {
@@ -158,6 +166,7 @@ impl LearnState {
                     scheduled_secs: (interval * 86_400.0) as u32,
                     elapsed_secs: 0,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                     ..self
                 }
                 .into()
@@ -170,6 +179,7 @@ impl LearnState {
                     ),
                     ease_factor: ctx.initial_ease_factor,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                     ..Default::default()
                 }
                 .into()
@@ -190,6 +200,7 @@ impl LearnState {
             scheduled_days: ctx.with_review_fuzz(interval as f32, minimum, maximum),
             ease_factor: ctx.initial_ease_factor,
             memory_state: ctx.fsrs_next_states.as_ref().map(|s| s.easy.memory.into()),
+            desired_retention: ctx.desired_retention,
             ..Default::default()
         }
     }
