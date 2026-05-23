@@ -85,6 +85,7 @@ fn extract_desired_retention(state: &CardState) -> Option<f32> {
 struct CardStateUpdater {
     card: Card,
     deck: Deck,
+    original_deck: Deck,
     config: DeckConfig,
     timing: SchedTimingToday,
     now: TimestampSecs,
@@ -259,7 +260,7 @@ impl Collection {
             .and_then(|card_queues| card_queues.load_balancer.as_ref())
         {
             // Only get_deck_config when load balancer is enabled
-            if let Some(deck_config_id) = ctx.deck.config_id() {
+            if let Some(deck_config_id) = ctx.original_deck.config_id() {
                 let note_id = self
                     .get_deck_config(deck_config_id, false)?
                     .map(|deck_config| deck_config.inner.bury_reviews)
@@ -356,7 +357,7 @@ impl Collection {
         self.update_deck_stats_from_answer(usn, answer, &updater, original.queue)?;
         self.maybe_bury_siblings(&original, &updater.config)?;
         let timing = updater.timing;
-        let deckconfig_id = updater.deck.config_id();
+        let deckconfig_id = updater.original_deck.config_id();
         let default_desired_retention = updater.desired_retention;
         let mut card = updater.into_card();
         if !matches!(
@@ -522,16 +523,24 @@ impl Collection {
             let params = config.fsrs_params();
             if params.len() >= 19 {
                 params[17] > 0.0 && params[18] > 0.0
+            } else if params.is_empty() {
+                // fallback to true when using default params
+                true
             } else {
                 false
             }
         } else {
             false
         };
+        let original_deck = self
+            .storage
+            .get_deck(home_deck.id)?
+            .or_not_found(home_deck.id)?;
         Ok(CardStateUpdater {
             fuzz_seed: get_fuzz_seed(&card, false),
             card,
             deck,
+            original_deck,
             config,
             timing,
             now: TimestampSecs::now(),
