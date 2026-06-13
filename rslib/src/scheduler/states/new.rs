@@ -4,9 +4,19 @@
 use super::interval_kind::IntervalKind;
 use crate::revlog::RevlogReviewKind;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NewState {
     pub position: u32,
+    pub desired_retention: Option<f32>,
+}
+
+impl Default for NewState {
+    fn default() -> Self {
+        NewState {
+            position: 0,
+            desired_retention: None,
+        }
+    }
 }
 
 impl NewState {

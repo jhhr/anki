@@ -12,6 +12,7 @@ impl From<anki_proto::scheduler::scheduling_state::Review> for ReviewState {
             lapses: state.lapses,
             leeched: state.leeched,
             memory_state: state.memory_state.map(Into::into),
+            desired_retention: state.desired_retention,
         }
     }
 }
@@ -25,6 +26,7 @@ impl From<ReviewState> for anki_proto::scheduler::scheduling_state::Review {
             lapses: state.lapses,
             leeched: state.leeched,
             memory_state: state.memory_state.map(Into::into),
+            desired_retention: state.desired_retention,
         }
     }
 }

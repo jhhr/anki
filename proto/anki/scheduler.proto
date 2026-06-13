@@ -80,12 +80,14 @@ service BackendSchedulerService {
 message SchedulingState {
   message New {
     uint32 position = 1;
+    optional float desired_retention = 2;
   }
   message Learning {
     uint32 remaining_steps = 1;
     uint32 scheduled_secs = 2;
     uint32 elapsed_secs = 3;
     optional cards.FsrsMemoryState memory_state = 6;
+    optional float desired_retention = 7;
   }
   message Review {
     uint32 scheduled_days = 1;
@@ -94,6 +96,7 @@ message SchedulingState {
     uint32 lapses = 4;
     bool leeched = 5;
     optional cards.FsrsMemoryState memory_state = 6;
+    optional float desired_retention = 7;
   }
   message Relearning {
     Review review = 1;

@@ -46,6 +46,7 @@ impl NormalState {
                     scheduled_secs: 0,
                     elapsed_secs: 0,
                     memory_state: None,
+                    desired_retention: ctx.desired_retention,
                 }
                 .next_states(ctx);
                 // .. but with current as New, not Learning

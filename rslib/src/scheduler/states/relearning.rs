@@ -43,11 +43,13 @@ impl RelearnState {
                     scheduled_secs: again_delay,
                     elapsed_secs: 0,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                 },
                 review: ReviewState {
                     scheduled_days: scheduled_days.round().max(1.0) as u32,
                     elapsed_days: 0,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                     ..self.review
                 },
             }
@@ -58,6 +60,7 @@ impl RelearnState {
             let again_review = ReviewState {
                 scheduled_days: ctx.with_review_fuzz(interval.round().max(1.0), minimum, maximum),
                 memory_state,
+                desired_retention: ctx.desired_retention,
                 ..self.review
             };
             let again_relearn = RelearnState {
@@ -66,6 +69,7 @@ impl RelearnState {
                     scheduled_secs: (interval * 86_400.0) as u32,
                     elapsed_secs: 0,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                 },
                 review: again_review,
             };
@@ -92,11 +96,13 @@ impl RelearnState {
                 learning: LearnState {
                     scheduled_secs: hard_delay,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                     ..self.learning
                 },
                 review: ReviewState {
                     elapsed_days: 0,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                     ..self.review
                 },
             }
@@ -107,12 +113,14 @@ impl RelearnState {
             let hard_review = ReviewState {
                 scheduled_days: ctx.with_review_fuzz(interval.round().max(1.0), minimum, maximum),
                 memory_state,
+                desired_retention: ctx.desired_retention,
                 ..self.review
             };
             let hard_relearn = RelearnState {
                 learning: LearnState {
                     scheduled_secs: (interval * 86_400.0) as u32,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                     ..self.learning
                 },
                 review: hard_review,
@@ -144,10 +152,12 @@ impl RelearnState {
                         .remaining_for_good(self.learning.remaining_steps),
                     elapsed_secs: 0,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                 },
                 review: ReviewState {
                     elapsed_days: 0,
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                     ..self.review
                 },
             }
@@ -158,6 +168,7 @@ impl RelearnState {
             let good_review = ReviewState {
                 scheduled_days: ctx.with_review_fuzz(interval.round().max(1.0), minimum, maximum),
                 memory_state,
+                desired_retention: ctx.desired_retention,
                 ..self.review
             };
             let good_relearn = RelearnState {
@@ -167,6 +178,7 @@ impl RelearnState {
                         .relearn_steps
                         .remaining_for_good(self.learning.remaining_steps),
                     memory_state,
+                    desired_retention: ctx.desired_retention,
                     ..self.learning
                 },
                 review: good_review,
@@ -198,6 +210,7 @@ impl RelearnState {
             scheduled_days,
             elapsed_days: 0,
             memory_state: ctx.fsrs_next_states.as_ref().map(|s| s.easy.memory.into()),
+            desired_retention: ctx.desired_retention,
             ..self.review
         }
     }

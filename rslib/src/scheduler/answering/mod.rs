@@ -62,6 +62,24 @@ impl CardAnswer {
     }
 }
 
+/// Extract desired_retention from the chosen state
+fn extract_desired_retention(state: &CardState) -> Option<f32> {
+    match state {
+        CardState::Normal(normal) => match normal {
+            NormalState::New(s) => s.desired_retention,
+            NormalState::Learning(s) => s.desired_retention,
+            NormalState::Review(s) => s.desired_retention,
+            NormalState::Relearning(s) => s.review.desired_retention,
+        },
+        CardState::Filtered(filtered) => match filtered {
+            FilteredState::Preview(_) => None,
+            FilteredState::Rescheduling(s) => {
+                extract_desired_retention(&CardState::Normal(s.original_state))
+            }
+        },
+    }
+}
+
 /// Holds the information required to determine a given card's
 /// current state, and to apply a state change to it.
 struct CardStateUpdater {
@@ -117,6 +135,7 @@ impl CardStateUpdater {
             fsrs_next_states: self.fsrs_next_states.clone(),
             fsrs_short_term_with_steps_enabled: self.fsrs_short_term_with_steps,
             fsrs_allow_short_term: self.fsrs_allow_short_term,
+            desired_retention: self.desired_retention,
         }
     }
 
@@ -182,7 +201,7 @@ impl CardStateUpdater {
         next: NormalState,
     ) -> RevlogEntryPartial {
         self.card.reps += 1;
-        self.card.desired_retention = self.desired_retention;
+        // Note: desired_retention will be set from the answer if provided
 
         let revlog = match next {
             NormalState::New(next) => self.apply_new_state(current, next),
@@ -339,6 +358,7 @@ impl Collection {
         self.maybe_bury_siblings(&original, &updater.config)?;
         let timing = updater.timing;
         let deckconfig_id = updater.original_deck.config_id();
+        let default_desired_retention = updater.desired_retention;
         let mut card = updater.into_card();
         if !matches!(
             answer.current_state,
@@ -350,6 +370,9 @@ impl Collection {
             card.custom_data = data;
             card.validate_custom_data()?;
         }
+        // Update desired_retention from the chosen state if provided, otherwise use deck config value
+        card.desired_retention =
+            extract_desired_retention(&answer.new_state).or(default_desired_retention);
 
         self.update_card_inner(&mut card, original, usn)?;
         if answer.new_state.leeched() {

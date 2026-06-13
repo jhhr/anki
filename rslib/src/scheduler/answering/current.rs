@@ -92,6 +92,7 @@ impl CardStateUpdater {
         match self.card.ctype {
             CardType::New => NormalState::New(NewState {
                 position: due.max(0) as u32,
+                desired_retention: self.card.desired_retention.or(self.desired_retention),
             }),
             CardType::Learn => {
                 let last_ivl = self.learn_steps().current_delay_secs(remaining_steps);
@@ -100,6 +101,7 @@ impl CardStateUpdater {
                     remaining_steps,
                     elapsed_secs: elapsed_secs(last_ivl),
                     memory_state,
+                    desired_retention: self.card.desired_retention.or(self.desired_retention),
                 }
             }
             .into(),
@@ -111,6 +113,7 @@ impl CardStateUpdater {
                 lapses,
                 leeched: false,
                 memory_state,
+                desired_retention: self.card.desired_retention.or(self.desired_retention),
             }
             .into(),
             CardType::Relearn => {
@@ -121,6 +124,7 @@ impl CardStateUpdater {
                         elapsed_secs: elapsed_secs(last_ivl),
                         remaining_steps,
                         memory_state,
+                        desired_retention: self.card.desired_retention.or(self.desired_retention),
                     },
                     review: ReviewState {
                         scheduled_days: interval,
@@ -129,6 +133,7 @@ impl CardStateUpdater {
                         lapses,
                         leeched: false,
                         memory_state,
+                        desired_retention: self.card.desired_retention.or(self.desired_retention),
                     },
                 }
             }
